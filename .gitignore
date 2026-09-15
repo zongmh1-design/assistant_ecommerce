@@ -1,0 +1,51 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Build and package output
+build/
+dist/
+*.egg-info/
+
+# Runtime data
+*.db
+*.sqlite
+*.sqlite3
+logs/
+uploads/
+generated_assets/
+
+# Frontend dependencies and output
+node_modules/
+.vite/
+coverage/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local imports and temporary files
+tmp/
+temp/
+*.log
+*.csv~
+*.xlsx~
