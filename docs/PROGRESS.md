@@ -19,37 +19,45 @@
 - 不存在 API、ORM、数据库迁移、前端或真实 AI 调用。
 - 仓库中没有 API Key、密码、Token 或本地隐私配置。
 
-## Phase 1：认证 + 用户权限（待开始）
+## Phase 1：认证 + 用户权限（已完成）
 
 **目标**：完成登录、当前用户识别、角色权限和用户状态的最小闭环。
 
 **涉及模块**：`User`、认证 API、密码哈希、访问令牌、角色校验、用户管理的最小能力。
 
-**验收条件**：管理员、运营人员、查看人员能够登录；写操作受登录和角色限制；查看人员无法写入；用户管理和禁用状态有测试；不保存明文密码。
+**验收条件**：已实现 FastAPI 启动入口、配置、SQLAlchemy、Alembic、`users` 表、Argon2 密码哈希、JWT 登录、`/auth/me` 和统一角色依赖。管理员、运营人员、查看人员的允许/拒绝路径已通过 HTTP 测试；禁用用户不能登录；不保存或返回明文密码。
 
-## Phase 2：店铺 + 商品（待开始）
+**验证记录**：pytest 12 项通过；Alembic 已用 PostgreSQL 方言离线生成从空库创建 `users` 表的 SQL。当前机器未配置可用 PostgreSQL 客户端和测试库，因此真实 PostgreSQL 迁移需要按 README 在本地数据库执行。
+
+## Phase 2A：店铺 + 商品（已完成）
 
 **目标**：创建和查询店铺、商品，建立清晰的 `Store 1:N Product` 关系。
 
-**涉及模块**：`Store`、`Product`、平台账号占位、商品状态、店铺和商品 API。
+**涉及模块**：`Store`、`Product`、商品状态、分页与简单筛选、店铺和商品 API。`PlatformAccount` 不在 Phase 2A 实现。
 
-**验收条件**：有权限用户可创建店铺和其下商品；商品不能脱离店铺；状态只允许 `draft/active/inactive`；越权和非法状态有测试；平台账号不保存真实凭据。
+**验收条件**：admin/operator 可创建和修改，viewer 只读；Product 必须关联已存在 Store；状态只允许 `draft/active/inactive`；金额使用 Decimal/NUMERIC；分页、`store_id/platform/status` 筛选、PATCH 空值语义、越权和 404 均有测试。
 
-## Phase 3：SKU + 库存（待开始）
+**验证记录**：完整 pytest 37 项通过，包含 Phase 1 回归；第二份 Alembic migration 使用 PostgreSQL 方言离线生成 SQL 并检查。当前机器没有可用 PostgreSQL 客户端和测试库，尚未执行真实 PostgreSQL `alembic upgrade head`。
+
+## Phase 2B（原计划 Phase 3）：SKU + 库存（已完成）
 
 **目标**：维护 SKU、库存汇总、库存预警和不可丢失的库存流水。
 
 **涉及模块**：`ProductSku`、`InventoryItem`、`InventoryMovement`、库存调整 Service。
 
-**验收条件**：一个商品可有多个 SKU；库存调整和流水在同一事务中完成；不能出现非法负库存或锁定量；正常、异常和边界情况有测试。
+**验收条件**：一个商品可有多个 SKU，编码在商品内唯一；创建 SKU 自动生成零库存和 initial 流水；库存调整和流水在同一事务中完成；不能出现非法负库存或锁定量；viewer 只读；正常、异常、分页、权限和事务回滚均有测试。
 
-## Phase 4：竞品（待开始）
+**验证记录**：完整 pytest 56 项通过，包含 Phase 1 和 Phase 2A 回归；第三份迁移已用 PostgreSQL 方言离线生成 SQL。当前机器没有 PostgreSQL 服务或 `psql`，尚未执行真实 PostgreSQL `alembic upgrade head`。
 
-**目标**：先完成竞品手工录入，再按需要增加公开链接解析和变化记录。
+## Phase 3A（原计划 Phase 4）：竞品 + 公开链接解析（已完成）
 
-**涉及模块**：`Competitor`、示例数据、`PublicLinkParseTask`，可选监控及快照。
+**目标**：完成竞品手工管理，并通过可替换 Parser 接口生成公开链接解析预览，经人工确认后进入正式竞品数据。
 
-**验收条件**：竞品必须关联商品；可手工增改查；数据来源清晰；Mock/示例数据明确标识；不包含绕过登录、验证码或风控的逻辑。
+**涉及模块**：`Competitor`、`PublicLinkParseTask`、`PublicLinkParser`、`MockPublicLinkParser`。定时监控及快照不在本阶段。
+
+**验收条件**：竞品必须关联商品；可手工增改查；Mock 解析支持确定成功与失败；结果明确标记为演示数据；成功结果需人工确认；重复确认和事务回滚有测试；不包含真实爬虫、账号、Cookie、验证码或风控绕过逻辑。
+
+**验证记录**：完整 pytest 71 项通过，包含此前阶段回归；第四份迁移已用 PostgreSQL 方言离线生成 SQL。当前机器没有 PostgreSQL 服务或 `psql`，尚未执行真实 PostgreSQL `alembic upgrade head`。
 
 ## Phase 5：商品诊断（待开始）
 

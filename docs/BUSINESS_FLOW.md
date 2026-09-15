@@ -22,14 +22,16 @@
 
 第一版以 `Product` 为业务主轴。除用户、店铺和平台账号外，后续运营结果必须能够追溯到具体商品。
 
+当前 Phase 3A 已落地前四步：Store、Product、ProductSku、当前库存、库存流水及竞品。商品诊断及后续步骤尚未实现。
+
 ## 2. 分步说明
 
 | 步骤 | 输入 | 输出 | 核心数据对象 | 下一步 |
 | --- | --- | --- | --- | --- |
-| 1. 创建店铺 | 店铺名称、平台、负责人、备注 | 可承载商品的店铺记录 | `Store`、`PlatformAccount`（占位） | 创建商品 |
-| 2. 创建商品 | 店铺、名称、类目、价格、成本、目标用户、卖点、平台信息 | 状态为 `draft/active/inactive` 的商品 | `Product`、`PlatformProductMapping`（按需） | 维护 SKU 和库存 |
-| 3. SKU / 库存 | 商品、规格、SKU 编码、价格、初始库存、预警阈值 | SKU、库存现状及首条库存流水 | `ProductSku`、`InventoryItem`、`InventoryMovement` | 补充竞品 |
-| 4. 竞品 | 商品、竞品名称、平台、公开链接或示例数据 | 与商品关联的竞品资料和可选变化记录 | `Competitor`、`PublicLinkParseTask`、`CompetitorMonitor` | 商品诊断 |
+| 1. 创建店铺 | 店铺名称、受控平台值、负责人、外部店铺标识、备注 | 可承载商品的 `Store` 记录 | `Store`；`PlatformAccount` 尚未实现 | 创建商品 |
+| 2. 创建商品 | 已存在的 `store_id`、名称、平台、类目、Decimal 价格/成本、目标用户、卖点和图片 URL | 状态为 `draft/active/inactive` 且归属 Store 的商品 | `Product`；`PlatformProductMapping` 尚未实现 | 维护 SKU 和库存 |
+| 3. SKU / 库存 | 已存在商品、商品内唯一 SKU 编码、规格、Decimal 价格/成本；库存变化量和原因 | SKU；自动初始化的当前库存；每次调整的前后数量和原因流水 | `ProductSku`、`InventoryItem`、`InventoryMovement` | 补充竞品 |
+| 4. 竞品 | 商品、手工竞品资料，或合法公开链接 | 正式竞品；或明确标记为 Mock 的解析预览，经人工确认后转为正式竞品 | `Competitor`、`PublicLinkParseTask`；定时监控未实现 | 商品诊断 |
 | 5. 商品诊断 | 商品、SKU、价格、目标用户、卖点、竞品 | 可编辑的结构化定位、痛点、风险和优化建议 | `ProductDiagnosis` | 生成主图方案 |
 | 6. 主图方案 | 商品诊断、卖点、目标用户、素材约束 | 至少 3 个可编辑主图方向 | `CreativePlan(plan_type=main_image)` | 生成视频脚本 |
 | 7. 视频脚本 | 商品诊断、卖点、目标用户、投放场景 | 至少 3 个可编辑视频脚本 | `CreativePlan(plan_type=video_script)` | 选择方案并创建生成任务 |
@@ -50,6 +52,19 @@ draft → active → inactive
 ```
 
 只有满足后续阶段约定的必要资料后，商品才进入对应生成流程；具体校验规则在各阶段实现时补充。
+
+### 公开链接解析与人工确认
+
+```text
+创建任务(pending)
+→ 手工触发运行(running, attempts + 1)
+→ PublicLinkParser
+→ succeeded(result_json) | failed(error_message)
+→ succeeded 结果由用户确认
+→ 同一事务创建 Competitor 并记录 confirmed_competitor_id
+```
+
+当前实现使用确定性的 `MockPublicLinkParser`，不访问网络。解析结果不会自动进入正式竞品数据，避免不完整或错误的外部信息污染后续商品诊断输入。
 
 ### 创意方案
 
