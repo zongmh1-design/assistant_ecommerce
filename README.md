@@ -185,7 +185,28 @@ POST /api/v1/products/{product_id}/diagnoses/generate
 
 配置错误会明确失败，不会静默回退 Mock。
 
-## 10. 运行测试
+## 10. Real LLM Provider Validation
+
+只在本地 `.env` 配置合法的 OpenAI-compatible endpoint、API Key 和模型：
+
+```dotenv
+LLM_PROVIDER=openai_compatible
+LLM_BASE_URL=https://example.com/v1
+LLM_API_KEY=
+LLM_MODEL=your-model
+```
+
+然后主动执行：
+
+```powershell
+python -m scripts.test_llm_provider
+```
+
+脚本会明确显示 `REAL NETWORK VALIDATION`，并验证 HTTP、JSON 解析和 Pydantic Schema；不会打印 API Key、Authorization Header、完整 Prompt 或原始响应。该操作会产生真实网络请求，具体 endpoint 可能产生费用。没有合法配置时脚本明确退出，不会回退 Mock。
+
+实际验证范围和结果见 `docs/LLM_PROVIDER_VALIDATION.md`。
+
+## 11. 运行测试
 
 ```powershell
 python -m pytest -q
@@ -193,7 +214,7 @@ python -m pytest -q
 
 测试使用隔离的内存 SQLite 作为 Repository/HTTP 行为测试替身，不会连接或修改本地 PostgreSQL。正式迁移仍以 PostgreSQL 方言定义，并应在本地 PostgreSQL 空库执行一次。
 
-## 11. Local PostgreSQL Verification
+## 12. Local PostgreSQL Verification
 
 下面只把 PostgreSQL 放入 Docker；FastAPI 仍在本机 Python `venv` 中运行，便于定位连接、迁移和应用问题。
 
@@ -267,7 +288,7 @@ python -m alembic upgrade head
 
 实际验收结果见 `docs/POSTGRES_VALIDATION.md`。
 
-## 12. 当前范围与 Mock 边界
+## 13. 当前范围与 Mock 边界
 
 已实现：
 
