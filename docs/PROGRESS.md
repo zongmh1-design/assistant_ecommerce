@@ -59,70 +59,126 @@
 
 **验证记录**：完整 pytest 71 项通过，包含此前阶段回归；第四份迁移已用 PostgreSQL 方言离线生成 SQL。当前机器没有 PostgreSQL 服务或 `psql`，尚未执行真实 PostgreSQL `alembic upgrade head`。
 
-## Phase 5：商品诊断（待开始）
+## Phase 4A（原计划 Phase 5）：结构化商品诊断（已完成）
 
-**目标**：基于商品、SKU 和竞品生成可编辑的结构化诊断。
+**目标**：基于 Product 和 Competitors 的必要字段构造 AI Context，通过可替换 Provider 生成并保存可编辑的结构化历史诊断。
 
-**涉及模块**：`ProductDiagnosis`、诊断 Schema、诊断 Service、Mock AI Provider。
+**涉及模块**：`ProductDiagnosis`、输入 Context、Prompt、`ProductDiagnosisOutput`、`LLMProvider`、`MockLLMProvider`、诊断 Service/API。
 
-**验收条件**：输出包含定位、价格带、人群、痛点、卖点、风险和建议；Schema 校验有效；用户可编辑保存；输入不足、格式异常和调用失败有测试。
+**验收条件**：Context 不含内部 ID/时间/技术字段；无竞品仍可生成；输出包含定位、价格带、人群、痛点、卖点、风险和建议；非法输出和 Provider 失败不落库；admin/operator 可生成编辑，viewer 只读；同一商品保留多次历史诊断。
 
-## Phase 6：主图方案 + 视频脚本（待开始）
+**验证记录**：完整 pytest 88 项通过，包含此前阶段回归；第五份迁移已用 PostgreSQL 方言离线生成 SQL。当前机器没有 PostgreSQL 服务或 `psql`，尚未执行真实 PostgreSQL `alembic upgrade head`。
+
+## Phase 4B：OpenAI-compatible LLM Provider（已完成）
+
+**目标**：不改变商品诊断主流程，通过集中配置在 Mock 与一个真实 OpenAI-compatible Chat API 通道之间切换。
+
+**涉及模块**：Provider 配置工厂、`OpenAICompatibleLLMProvider`、HTTP 超时、有限重试、有限 JSON fence 处理、调用元数据、人工验证脚本。
+
+**验收条件**：Mock/Real 选择明确；真实模式缺失配置或未知类型明确失败且不回退；401/403/400 不重试；timeout、network、429、5xx 有限重试；非法 JSON/Schema 不落库；API Key 不进入日志、测试或 Git；自动测试不访问外网。
+
+**验证记录**：完整 pytest 111 项通过，包含原有 88 项；第六份迁移使用 PostgreSQL 方言离线验证。当前未配置真实 API Key，也没有执行真实网络调用，因此只确认 MockTransport 自动化链路，不声称真实供应商 API 已验证。
+
+## Phase 5（原计划 Phase 6）：主图方案 + 视频脚本（已完成）
 
 **目标**：用统一 `CreativePlan` 管理两类结构化创意方案。
 
-**涉及模块**：`CreativePlan`、主图和视频输出 Schema、方案状态、Mock AI Provider。
+**涉及模块**：`CreativePlan`、白名单 Creative Context、主图和视频 Prompt/输出 Schema、方案编辑与状态、现有 `LLMProvider` 和扩展后的 `MockLLMProvider`。
 
-**验收条件**：每类至少生成 3 个方案；用户可编辑；状态支持 `draft/selected/archived`；两类方案共享业务对象但 Schema 清晰；异常输出有测试。
+**验收条件**：每次每类严格生成 3 个独立方案；无诊断时仍可生成；用户可编辑；状态支持 `draft/selected/archived`，同商品同类型最多一个 selected；两类方案共享业务对象但 Schema 清晰；输入快照和 Provider 元数据可追溯；Provider、Schema 和数据库写入失败均不产生部分批次。
 
-## Phase 7：异步生成任务（待开始）
+**验证记录**：完整 pytest 131 项通过，包含此前 111 项；第七份迁移已纳入检查。当前生成的只是文字主图方向和视频脚本，没有实现真实图片/视频、异步任务或素材库。
 
-**目标**：实现不阻塞普通 API 的图片/视频生成任务状态机。
+## Phase 6（原计划 Phase 7）：生成任务状态流程（已完成）
 
-**涉及模块**：`GenerationJob`、`GenerationJobEvent`、Job Service、Worker / Executor、Mock Generator。
+**目标**：实现创建与执行分离的图片/视频生成任务领域模型；用手工 run 入口演示执行，不引入后台队列。
 
-**验收条件**：支持 `pending/running/succeeded/failed/cancelled/timeout`；Mock 可演示成功与失败；重试、取消、超时和重复任务有测试；事件时间线完整。
+**涉及模块**：`GenerationJob`、`GenerationJobEvent`、`GenerationJobService`、`MediaGenerator`、Mock Image/Video Generator、超时扫描。
 
-## Phase 8：素材库（待开始）
+**验收条件**：只有 selected 且类型匹配的方案可创建任务；支持 `pending/running/succeeded/failed/cancelled/timeout`；running 在 Generator 前独立提交；attempts、重试上限、pending 取消和管理员超时扫描明确；状态与 Event 同事务；PostgreSQL 行锁防重复领取；Mock 不访问网络或创建文件。
 
-**目标**：保存生成素材并完成人工审核、版本和使用信息管理。
+**验证记录**：完整 pytest 154 项通过，包含此前 131 项；第八份迁移纳入 PostgreSQL 方言离线验证。当前没有后台 Worker、真实媒体模型、文件存储或 GeneratedAsset。
 
-**涉及模块**：`GeneratedAsset`、素材查询、审核状态、版本、评分、标签和备注。
+## Phase 7（原计划 Phase 8）：素材库（已完成）
 
-**验收条件**：成功任务可产生素材；素材可追溯到商品、方案和任务；AI 生成不自动等于可用；人工审核和权限有测试。
+**目标**：将 succeeded Job 的合法结果显式同步为正式素材记录，并完成人工审核、版本和使用信息管理。
 
-## Phase 9：推广 + 投放建议（待开始）
+**涉及模块**：`GeneratedAsset`、`GeneratedAssetService`、Result Schema、幂等逐 Job sync、素材查询、审核状态、版本、评分、标签和备注。
 
-**目标**：完成追踪链接、结构化投放建议、人工确认和实验计划管理。
+**验收条件**：只有 succeeded Job 的合法结果能产生素材；素材唯一追溯到商品、方案和任务；坏 Job 不阻塞合法 Job；同步幂等；版本由系统分配并有并发兜底；admin/operator 可同步和审核，viewer 只读；不接对象存储或真实文件。
 
-**涉及模块**：`PromotionLink`、`PromotionLinkClick`、`AdRecommendation`、`AdExperiment`。
+**验证记录**：完整 pytest 184 项通过，包含此前 154 项；第九份迁移纳入 PostgreSQL 方言离线验证。当前 Asset 仅引用 Mock URL，没有真实图片、视频、上传、缩略图或转码能力。
 
-**验收条件**：追踪码可记录点击；建议可编辑；必须人工确认或驳回；只有已确认建议可进入实验计划；不连接真实广告平台；权限和状态迁移有测试。
+## Phase 8：推广链接与基础点击统计（已完成）
 
-## Phase 10：经营数据（待开始）
+**目标**：完成推广参数建议、人工创建链接、公开 tracking code 跳转和基础点击统计。
 
-**目标**：支持手工录入和 CSV / Excel 导入经营指标。
+**涉及模块**：`PromotionLink`、`PromotionLinkClick`、`PromotionLinkService`、`PromotionLinkSuggestion`、现有 `LLMProvider`。
 
-**涉及模块**：`PerformanceRecord`、导入模板、字段映射、预览、逐行校验和导入结果。
+**验收条件**：AI 只建议场景和 UTM，不决定 target URL 或 tracking code；tracking code 后端随机生成且唯一；active 公开跳转会在同一事务中写 Click 并原子增加计数；inactive 不跳转；admin/operator 写、viewer 只读；不连接广告平台或第三方短链。
 
-**验收条件**：支持核心八项指标；派生指标有一致计算规则；导入先预览后确认；错误行含原因；一行失败不阻断其他合法行；重复和边界数据有测试。
+**验证记录**：完整 pytest 208 项通过，包含此前 184 项；第十份迁移已通过 PostgreSQL 方言离线验证。SQLite 验证事务回滚和原子 UPDATE SQL，但不宣称验证 PostgreSQL 真实并发语义。当前没有真实 PostgreSQL 服务可执行在线迁移。
 
-## Phase 11：经营分析报告（待开始）
+## Phase 9：AI 投放建议与人工确认（已完成）
+
+**目标**：根据现有单品运营数据生成可编辑、可追溯的结构化投放建议，并由人工最终确认或驳回。
+
+**涉及模块**：`AdRecommendation`、白名单 Context、严格 AI 输出 Schema、独立 Prompt、现有 `LLMProvider`、人工编辑与终态决策。
+
+**验收条件**：每次生成新增历史建议；数据不足时不编造指标；预算使用 Decimal 语义；pending 可编辑；confirmed/rejected 为终态；确认人只能来自当前登录用户；admin/operator 写、viewer 只读；不包含广告执行代码或第三方 SDK。
+
+**验证记录**：完整 pytest 226 项通过，包含此前 208 项；第十一份迁移已纳入 PostgreSQL 方言离线检查。当前没有真实 PostgreSQL 服务可执行在线迁移，也没有真实广告平台调用。
+
+## Phase 10：投放实验计划与状态（已完成）
+
+**目标**：从用户明确指定的 confirmed AdRecommendation 生成可编辑 draft 实验，并人工管理后续状态。
+
+**涉及模块**：`AdExperiment`、严格 Context/输出 Schema、Prompt、现有 `LLMProvider`、可选 Asset/Link 绑定、正文编辑与独立状态接口。
+
+**验收条件**：Recommendation 必须 confirmed 且归属商品；Asset/Link 必须 approved/active 且同商品；预算为正 Decimal；初始 draft 且只有 draft 可编辑；状态流转严格；running 只作人工记录；viewer 只读；无广告执行、经营数据或队列。
+
+**验证记录**：完整 pytest 260 项通过，包含此前 226 项；第十二份迁移已纳入 PostgreSQL 方言离线检查。当前没有真实 PostgreSQL 服务可执行在线迁移，也没有广告平台执行能力。
+
+## Phase 11A：经营数据手工录入（已完成）
+
+**目标**：支持手工创建和修改周期经营数据，由系统统一计算 CTR、Conversion Rate 和 ROI。
+
+**涉及模块**：`PerformanceRecord`、Create/Update/Read Schema、Repository、Service、REST API 和第十三份迁移。
+
+**验收条件**：原始指标非负且满足点击/转化上限；周期正向；金额和计算全程 Decimal；`spend=0` 时 ROI 为 NULL；可选关联对象严格归属商品；仅 running/finished Experiment 可录入；admin/operator 写、viewer 只读；修改后重算；不调用 LLM，不读取累计 click_count 作为周期 clicks。
+
+**验证记录**：Phase 11A 专项 pytest 30 项通过，完整 pytest 290 项通过；OpenAPI、编译、pip check、Alembic 单一 head 和 PostgreSQL 方言离线迁移均通过。当前环境没有 psql，未执行真实 PostgreSQL 在线迁移。
+
+## Phase 11B：经营数据文件导入（已完成）
+
+**目标**：支持 CSV / Excel 字段检查、预览、逐行错误反馈和允许部分成功的确认导入。
+
+**涉及模块**：XLSX 模板、专用 CSV/XLSX Parser、Preview/Import Service、行级结果 Schema、multipart API、`openpyxl`。
+
+**验收条件**：模板不包含派生字段；CSV 支持 UTF-8/BOM；XLSX 只读第一张表；Preview 零写入；Import 重新验证并允许部分成功；行号和字段错误清晰；5 MB/1000 行限制；复用 Phase 11A 规则；不使用 pandas、LLM、ImportBatch 或异步任务。
+
+**验证记录**：Phase 11B 专项 pytest 24 项通过，完整 pytest 314 项通过；编译、pip check、OpenAPI multipart、Alembic 单一 head、敏感信息和阶段越界扫描均通过。本阶段没有数据库结构变化，不新增 Migration；当前环境没有 Office/LibreOffice 渲染器，XLSX 已完成 openpyxl 回读与样式结构检查，未做像素级渲染检查。
+
+## Phase 12（原计划 Phase 11）：经营分析报告（已完成）
 
 **目标**：基于可追溯输入生成可编辑的结构化经营分析和下一轮动作。
 
-**涉及模块**：`ReviewReport`、报告 Schema、确定性指标计算、报告 Service、Mock/真实 AI Provider。
+**涉及模块**：`ReviewReport`、白名单 Review Context、确定性 Decimal 聚合、分组摘要、严格输出 Schema、Prompt、现有 Mock/真实 AI Provider、人工编辑与历史查询。
 
-**验收条件**：包含周期摘要、核心发现、问题判断和下一步动作；保留输入数据或稳定引用；用户可修改；输入不足和 AI 异常有测试；可回到下一轮诊断或方案优化。
+**验收条件**：只纳入完整落在明确周期内的经营记录；基于原始总量重算 CTR/CVR/ROI；无数据不调用模型；Context 不含敏感点击明细；输出严格校验；失败不落库；同周期保留多份历史；人工可编辑正文但不能改变周期与输入快照；不自动触发下一轮流程。
 
-## Phase 12：完整演示和部署（待开始）
+**验证记录**：Phase 12 专项 pytest 16 项通过，完整 pytest 330 项通过；编译、pip check、59 条 OpenAPI 路径、Alembic 单一 head、PostgreSQL 方言离线迁移、敏感信息与阶段越界扫描均通过。第十四份迁移新增 review_reports，未修改历史迁移；当前环境未执行真实 PostgreSQL 在线迁移或真实 LLM 网络调用。
 
-**目标**：串联完整单品流程，补齐可重复演示、接口说明和部署文档。
+## Phase 13（原计划 Phase 12）：完整后端演示与运行验收（已完成）
 
-**涉及模块**：前端整合、演示数据、数据库初始化/迁移、接口文档、导入模板、运行与部署说明。
+**目标**：串联完整单品流程，补齐可重复 Demo Data、HTTP Smoke、接口演示、新环境 Quick Start 和需求追踪。
 
-**验收条件**：新环境可按文档启动；不同角色可演示权限；一条商品从建档到报告完整跑通；真实/Mock/未实现能力标识准确；不含敏感信息；部署仅在负责人明确确认后执行。
+**涉及模块**：`DemoDataService`、admin-only Demo API、HTTP-only Smoke 脚本、Sample CSV、`DEMO.md`、`REQUIREMENT_TRACEABILITY.md` 和 README Quick Start。
 
-## 建议的第一个开发任务
+**验收条件**：从既有管理员登录开始，通过现有 Service 创建完整单品闭环；库存和状态规则不绕过；失败可恢复且重复调用不复制业务图；Smoke 只走 HTTP；文档可用于新环境；Mock/真实/未接入边界清楚；不新增 Migration、业务模块或前端。
 
-进入 Phase 1 前，先确认 Python 版本、依赖管理方式、Web 框架、ORM、数据库和认证方式。确认后只实现“最小认证骨架 + `User` 表 + 三角色权限测试”，不要同时开发店铺或商品。
+**验证记录**：Demo API/HTTP Smoke 专项 pytest 8 项通过，完整 pytest 338 项通过；编译、pip check、60 条 OpenAPI 路径与 16 条关键路径、Alembic 单一 head、PostgreSQL 方言离线迁移、Sample CSV、安全与阶段越界扫描、git diff 检查均通过。本阶段没有数据库结构变化，不新增 Migration；当前环境未执行真实 PostgreSQL HTTP Smoke、真实 LLM/媒体模型调用或生产部署。
+
+## 下一阶段建议
+
+当前第一版后端阶段已闭环。下一步如需继续，建议单独立项前端或真实基础设施验证；在负责人明确确认前不进入实现。

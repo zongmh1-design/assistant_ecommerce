@@ -1,0 +1,4 @@
+period_start,period_end,impressions,clicks,conversions,spend,revenue,notes,creative_plan_id,generated_asset_id,promotion_link_id,experiment_id
+2026-09-01T00:00:00+00:00,2026-09-02T00:00:00+00:00,12000,720,58,800.00,1460.00,Demo CSV Day 1 [Mock],,,,
+2026-09-02T00:00:00+00:00,2026-09-03T00:00:00+00:00,15000,825,64,920.00,1680.00,Demo CSV Day 2 [Mock],,,,
+2026-09-03T00:00:00+00:00,2026-09-04T00:00:00+00:00,18000,1080,91,1050.00,2240.00,Demo CSV Day 3 [Mock],,,,

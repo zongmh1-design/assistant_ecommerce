@@ -13,7 +13,16 @@ from app.models.store import Platform, Store
 
 if TYPE_CHECKING:
     from app.models.competitor import Competitor, PublicLinkParseTask
+    from app.models.ad_recommendation import AdRecommendation
+    from app.models.ad_experiment import AdExperiment
+    from app.models.performance_record import PerformanceRecord
+    from app.models.creative_plan import CreativePlan
+    from app.models.generation_job import GenerationJob
+    from app.models.generated_asset import GeneratedAsset
+    from app.models.promotion_link import PromotionLink
+    from app.models.product_diagnosis import ProductDiagnosis
     from app.models.product_sku import ProductSku
+    from app.models.review_report import ReviewReport
 
 
 class ProductStatus(str, Enum):
@@ -87,4 +96,38 @@ class Product(Base):
     link_parse_tasks: Mapped[list["PublicLinkParseTask"]] = relationship(
         back_populates="product",
         passive_deletes=True,
+    )
+    diagnoses: Mapped[list["ProductDiagnosis"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    creative_plans: Mapped[list["CreativePlan"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    generation_jobs: Mapped[list["GenerationJob"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    generated_assets: Mapped[list["GeneratedAsset"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    promotion_links: Mapped[list["PromotionLink"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    ad_recommendations: Mapped[list["AdRecommendation"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    ad_experiments: Mapped[list["AdExperiment"]] = relationship(
+        back_populates="product",
+        passive_deletes=True,
+    )
+    performance_records: Mapped[list["PerformanceRecord"]] = relationship(
+        back_populates="product", passive_deletes=True
+    )
+    review_reports: Mapped[list["ReviewReport"]] = relationship(
+        back_populates="product", passive_deletes=True
     )

@@ -35,6 +35,14 @@ class CompetitorRepository:
         total = self.db.scalar(select(func.count()).select_from(Competitor).where(condition)) or 0
         return items, total
 
+    def list_for_diagnosis(self, product_id: int) -> list[Competitor]:
+        statement = (
+            select(Competitor)
+            .where(Competitor.product_id == product_id)
+            .order_by(Competitor.id)
+        )
+        return list(self.db.scalars(statement))
+
     def update(self, competitor: Competitor, changes: dict[str, Any]) -> Competitor:
         for field_name, value in changes.items():
             setattr(competitor, field_name, value)
