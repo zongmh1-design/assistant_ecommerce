@@ -23,6 +23,7 @@
 | 真实图片/视频模型 | MediaGenerator 抽象 | 无真实模型调用 | 未接入 |
 | 真实广告平台执行 | 明确排除 | 无执行 API | 未接入 |
 | 对象存储与生产 Worker | 明确排除 | 无 | 未接入 |
-| 前端 | 独立后续阶段 | 无 | 未实现 |
+| React 前端工作台 | React / TypeScript / Vite / Ant Design | `/login`、`/stores`、`/products`、`/products/{id}/{module}` | Phase 16A～16H 已实现；页面通过统一 API Client 连接后端 |
+| 前端真实 PostgreSQL 浏览器验收 | FastAPI + PostgreSQL + Vite 运行环境 | `docs/DEMO.md` 浏览器演示流程 | 代码与脚本已准备；是否通过取决于本机 Docker/PostgreSQL 可用性 |
 
 说明：表中省略了统一前缀 `/api/v1`。Mock 能力不会被描述成真实平台或真实模型接入。

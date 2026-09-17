@@ -179,6 +179,16 @@
 
 **验证记录**：Demo API/HTTP Smoke 专项 pytest 8 项通过，完整 pytest 338 项通过；编译、pip check、60 条 OpenAPI 路径与 16 条关键路径、Alembic 单一 head、PostgreSQL 方言离线迁移、Sample CSV、安全与阶段越界扫描、git diff 检查均通过。本阶段没有数据库结构变化，不新增 Migration；当前环境未执行真实 PostgreSQL HTTP Smoke、真实 LLM/媒体模型调用或生产部署。
 
+## Phase 16：前端工作台（16A～16H）
+
+**目标**：在不增加后端业务的前提下，完成 React 工作台、单品 Workbench、SKU/库存、竞品、诊断、创意、任务、素材、推广、投放、经营数据和复盘报告页面，并完成路由懒加载、生产构建与发布前检查。
+
+**涉及模块**：`frontend/` 下的统一 `apiClient`、AuthContext、路由保护、业务 API 模块、页面和组件；Phase 16H 增加 route-level `React.lazy` / `Suspense`、README/DEMO/需求追踪更新。
+
+**验收条件**：页面继续使用真实后端契约；admin/operator 与 viewer 的写入边界清晰；文件上传、模板下载和公开 tracking 跳转不伪造；外部 LLM/媒体/平台能力保持 Mock；初始构建不再静态包含全部业务页面。
+
+**验证记录**：Phase 16H 前端自动测试保持 72 项；懒加载调整后曾发现登录页测试等待异步 chunk 的时序问题，已将登录入口保留为同步页面，业务页面仍按路由懒加载。当前工作区完成 `npm test`、`npm run lint` 和 `npm run build` 的修复后复跑；真实 Docker PostgreSQL、FastAPI 和浏览器联调受本机 Docker Engine 不可用影响，未声称通过。
+
 ## 下一阶段建议
 
-当前第一版后端阶段已闭环。下一步如需继续，建议单独立项前端或真实基础设施验证；在负责人明确确认前不进入实现。
+后端和前端核心业务范围已冻结。下一步只应在具备 Docker/PostgreSQL 和可用浏览器环境时执行真实发布验收；不要新增业务模块。

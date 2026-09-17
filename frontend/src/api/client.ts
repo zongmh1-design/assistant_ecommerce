@@ -120,3 +120,34 @@ export async function apiClient<T>(
   }
   return payload as T
 }
+
+/** 下载非 JSON 响应，同时复用认证和统一 HTTP 错误映射。 */
+export async function apiClientBlob(path: string, options: RequestInit = {}): Promise<Blob> {
+  const headers = new Headers(options.headers)
+  headers.set('Accept', '*/*')
+  const token = getStoredToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let response: Response
+  try {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
+    response = await fetch(`${baseUrl}${path}`, { ...options, headers })
+  } catch {
+    throw new ApiError(0, 'network_error', '无法连接后端服务，请检查服务是否已启动')
+  }
+
+  if (!response.ok) {
+    const text = await response.text()
+    let payload: unknown = null
+    if (text) {
+      try {
+        payload = JSON.parse(text)
+      } catch {
+        payload = null
+      }
+    }
+    if (response.status === 401) unauthorizedHandler?.()
+    throw parseError(response.status, payload)
+  }
+  return response.blob()
+}

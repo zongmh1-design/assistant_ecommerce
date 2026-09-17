@@ -1,6 +1,6 @@
 import { EditOutlined } from '@ant-design/icons'
 import { Alert, Button, Card, Descriptions, Menu, Result, Space, Tag, Typography } from 'antd'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getProduct } from '../api/products'
@@ -9,24 +9,30 @@ import { useAuth } from '../auth/AuthContext'
 import { PageError, PageLoading } from '../components/PageState'
 import type { Product } from '../types/product'
 import type { Store } from '../types/store'
-import { SkuInventoryPage } from './SkuInventoryPage'
-import { CompetitorsPage } from './CompetitorsPage'
-import { DiagnosisPage } from './DiagnosisPage'
-import { CreativePlansPage } from './CreativePlansPage'
-import { GenerationJobsPage } from './GenerationJobsPage'
-import { AssetsPage } from './AssetsPage'
+
+const SkuInventoryPage = lazy(() => import('./SkuInventoryPage').then(({ SkuInventoryPage }) => ({ default: SkuInventoryPage })))
+const CompetitorsPage = lazy(() => import('./CompetitorsPage').then(({ CompetitorsPage }) => ({ default: CompetitorsPage })))
+const DiagnosisPage = lazy(() => import('./DiagnosisPage').then(({ DiagnosisPage }) => ({ default: DiagnosisPage })))
+const CreativePlansPage = lazy(() => import('./CreativePlansPage').then(({ CreativePlansPage }) => ({ default: CreativePlansPage })))
+const GenerationJobsPage = lazy(() => import('./GenerationJobsPage').then(({ GenerationJobsPage }) => ({ default: GenerationJobsPage })))
+const AssetsPage = lazy(() => import('./AssetsPage').then(({ AssetsPage }) => ({ default: AssetsPage })))
+const PromotionLinksPage = lazy(() => import('./PromotionLinksPage').then(({ PromotionLinksPage }) => ({ default: PromotionLinksPage })))
+const AdRecommendationsPage = lazy(() => import('./AdRecommendationsPage').then(({ AdRecommendationsPage }) => ({ default: AdRecommendationsPage })))
+const AdExperimentsPage = lazy(() => import('./AdExperimentsPage').then(({ AdExperimentsPage }) => ({ default: AdExperimentsPage })))
+const PerformancePage = lazy(() => import('./PerformancePage').then(({ PerformancePage }) => ({ default: PerformancePage })))
+const ReviewReportsPage = lazy(() => import('./ReviewReportsPage').then(({ ReviewReportsPage }) => ({ default: ReviewReportsPage })))
 
 const modules = [
-  { key: 'overview', label: '概览', ready: true },
-  { key: 'skus', label: 'SKU / 库存', ready: true },
-  { key: 'competitors', label: '竞品', ready: true },
+  { key: 'overview', label: '概览' },
+  { key: 'skus', label: 'SKU / 库存' },
+  { key: 'competitors', label: '竞品' },
   { key: 'diagnosis', label: '商品诊断' },
   { key: 'creative-plans', label: '创意方案' },
   { key: 'generation-jobs', label: '生成任务' },
   { key: 'assets', label: '素材库' },
   { key: 'promotion-links', label: '推广链接' },
   { key: 'ad-recommendations', label: '投放建议' },
-  { key: 'experiments', label: '投放实验' },
+  { key: 'ad-experiments', label: '投放实验' },
   { key: 'performance', label: '经营数据' },
   { key: 'review-reports', label: '复盘报告' },
 ]
@@ -38,7 +44,7 @@ export function ProductWorkbenchPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [store, setStore] = useState<Store | null>(null)
   const [error, setError] = useState('')
-  const selected = moduleKey === 'diagnoses' ? 'diagnosis' : moduleKey === 'creative' ? 'creative-plans' : moduleKey || 'overview'
+  const selected = moduleKey === 'diagnoses' ? 'diagnosis' : moduleKey === 'creative' ? 'creative-plans' : moduleKey === 'experiments' ? 'ad-experiments' : moduleKey || 'overview'
   const currentModule = modules.find((item) => item.key === selected)
 
   useEffect(() => {
@@ -89,7 +95,8 @@ export function ProductWorkbenchPage() {
           onClick={({ key }) => navigate(key === 'overview' ? `/products/${product.id}` : `/products/${product.id}/${key}`)}
         />
         <div className="workbench-content">
-          {selected === 'overview' ? (
+          <Suspense fallback={<PageLoading />}>
+            {selected === 'overview' ? (
             <>
               <Typography.Title level={4}>商品概览</Typography.Title>
               <Descriptions bordered column={2}>
@@ -107,8 +114,8 @@ export function ProductWorkbenchPage() {
               <Alert
                 type="info"
                 showIcon
-                message="后续运营模块已预留导航入口"
-                description="SKU / 库存、竞品、商品诊断、创意方案、生成任务和素材库已接入；推广与投放模块将在后续前端阶段接入。"
+                message="单品运营模块已接入"
+                description="SKU / 库存、竞品、诊断、创意、生成任务、素材、推广、投放建议、投放实验、经营数据和复盘报告均可从工作台进入。"
                 className="overview-note"
               />
             </>
@@ -124,13 +131,24 @@ export function ProductWorkbenchPage() {
             <GenerationJobsPage productId={product.id} />
           ) : selected === 'assets' ? (
             <AssetsPage productId={product.id} />
-          ) : (
-            <Result
-              status="info"
-              title={currentModule.label}
-              subTitle="此模块将在后续前端阶段实现，当前未发起任何业务 API 请求。"
-            />
-          )}
+          ) : selected === 'promotion-links' ? (
+            <PromotionLinksPage productId={product.id} />
+          ) : selected === 'ad-recommendations' ? (
+            <AdRecommendationsPage productId={product.id} />
+          ) : selected === 'ad-experiments' ? (
+            <AdExperimentsPage productId={product.id} />
+          ) : selected === 'performance' ? (
+            <PerformancePage productId={product.id} />
+          ) : selected === 'review-reports' ? (
+            <ReviewReportsPage productId={product.id} />
+            ) : (
+              <Result
+                status="404"
+                title="模块不存在"
+                subTitle="请从当前商品工作台导航选择已接入模块。"
+              />
+            )}
+          </Suspense>
         </div>
       </Card>
     </Space>
