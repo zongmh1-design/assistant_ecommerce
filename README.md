@@ -329,6 +329,32 @@ python -m alembic upgrade head
 
 当前 Mock：默认 LLM、竞品公开链接 Parser、图片 Generator、视频 Generator。Demo 中所有平台、竞品、素材和经营数值均明确标记为 Demo/Mock。
 
-当前未接入：前端、真实电商平台授权与同步、真实广告执行、真实图片/视频模型、对象存储、Production Worker、Celery/Redis、定时任务。
+当前未接入：Promotion/Ads/Performance/Review 等后续业务前端、真实电商平台授权与同步、真实广告执行、真实图片/视频模型、对象存储、Production Worker、Celery/Redis、定时任务。
 
 完整阶段计划见 `docs/PROGRESS.md`，需求对应关系见 `docs/REQUIREMENT_TRACEABILITY.md`。
+
+## 14. Frontend Development
+
+Phase 16A～16D 前端使用 React、TypeScript、Vite、React Router 和 Ant Design。当前包含登录、权限状态、Store/Product 基础页面、Product Workbench、SKU/库存、竞品解析、商品诊断，以及创意方案、生成任务和素材审核页面。
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+默认 `VITE_API_BASE_URL=/api/v1`，开发服务器会把 `/api` 代理到 `http://127.0.0.1:8000`。如果前后端分别部署，可在本地 `.env.local` 中改为完整 API 地址，例如：
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+不要在前端环境文件中保存 JWT、密码或任何 API Key。Access Token 只保存在当前浏览器标签会话的 `sessionStorage`；后端仍是权限判断的最终边界。
+
+测试与生产构建：
+
+```powershell
+npm test
+npm run build
+```
