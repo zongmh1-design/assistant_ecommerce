@@ -19,6 +19,10 @@ const mocks = vi.hoisted(() => ({
   getStore: vi.fn(),
   createStore: vi.fn(),
   updateStore: vi.fn(),
+  listDiagnoses: vi.fn(),
+  getDiagnosis: vi.fn(),
+  generateDiagnosis: vi.fn(),
+  updateDiagnosis: vi.fn(),
 }))
 
 vi.mock('../api/auth', () => ({ login: mocks.login, getCurrentUser: mocks.getCurrentUser }))
@@ -33,6 +37,12 @@ vi.mock('../api/stores', () => ({
   getStore: mocks.getStore,
   createStore: mocks.createStore,
   updateStore: mocks.updateStore,
+}))
+vi.mock('../api/diagnoses', () => ({
+  listDiagnoses: mocks.listDiagnoses,
+  getDiagnosis: mocks.getDiagnosis,
+  generateDiagnosis: mocks.generateDiagnosis,
+  updateDiagnosis: mocks.updateDiagnosis,
 }))
 
 const admin: User = {
@@ -97,6 +107,7 @@ beforeEach(() => {
   mocks.listStores.mockResolvedValue(page([store]))
   mocks.getProduct.mockResolvedValue(product)
   mocks.getStore.mockResolvedValue(store)
+  mocks.listDiagnoses.mockResolvedValue(page([]))
 })
 
 describe('authentication foundation', () => {
@@ -202,11 +213,12 @@ describe('product pages', () => {
     await waitFor(() => expect(mocks.updateProduct).toHaveBeenCalledWith(20, { name: '更新商品' }))
   })
 
-  it('opens the workbench and its placeholder navigation', async () => {
+  it('opens the workbench and its diagnosis page', async () => {
     authenticateAs()
     renderAt('/products/20')
     expect(await screen.findByText('商品概览')).toBeInTheDocument()
     await userEvent.click(screen.getByText('商品诊断'))
-    expect(await screen.findByText('此模块将在后续前端阶段实现，当前未发起任何业务 API 请求。')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '商品诊断' })).toBeInTheDocument()
+    expect(await screen.findByText('当前商品还没有诊断结果')).toBeInTheDocument()
   })
 })

@@ -1,6 +1,6 @@
 # E-commerce Operations Assistant
 
-电商运营助手是面向中小电商团队的运营工作台。当前已完成 **Phase 13：完整后端演示与验收链路**。系统可以从管理员登录开始，通过现有业务 Service 初始化并核验一条完整单品运营闭环。
+电商运营助手是面向中小电商团队的运营工作台。后端核心业务和 React 前端工作台已经完成 Phase 16H 发布前验证准备。系统可以从管理员登录开始，通过现有业务 Service 初始化并核验一条完整单品运营闭环。
 
 ## Quick Start
 
@@ -329,13 +329,13 @@ python -m alembic upgrade head
 
 当前 Mock：默认 LLM、竞品公开链接 Parser、图片 Generator、视频 Generator。Demo 中所有平台、竞品、素材和经营数值均明确标记为 Demo/Mock。
 
-当前未接入：Diagnosis/Creative/Asset 等后续业务前端、真实电商平台授权与同步、真实广告执行、真实图片/视频模型、对象存储、Production Worker、Celery/Redis、定时任务。
+当前未接入：真实电商平台授权与同步、真实广告执行、真实图片/视频模型、对象存储、Production Worker、Celery/Redis、定时任务。
 
 完整阶段计划见 `docs/PROGRESS.md`，需求对应关系见 `docs/REQUIREMENT_TRACEABILITY.md`。
 
 ## 14. Frontend Development
 
-Phase 16A 前端使用 React、TypeScript、Vite、React Router 和 Ant Design。当前包含登录、权限状态、Store/Product 基础页面与 Product Workbench 导航框架。
+Phase 16A～16H 前端使用 React、TypeScript、Vite、React Router 和 Ant Design。当前包含登录、权限状态、Store/Product 基础页面、Product Workbench、SKU/库存、竞品解析、商品诊断、创意方案、生成任务、素材审核、推广链接、投放建议、投放实验、经营数据导入和复盘报告页面。业务页面采用 Route-level lazy loading，登录、权限、错误处理和 API Client 仍保持统一。
 
 ```powershell
 cd frontend
@@ -358,3 +358,32 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
 npm test
 npm run build
 ```
+
+生产构建预览：
+
+```powershell
+npm run preview -- --host 127.0.0.1
+```
+
+生产部署时通过构建环境提供 `VITE_API_BASE_URL`，不要把 API 地址、JWT、密码或 API Key 写死在源码或构建产物中。开发环境默认使用 Vite `/api` 代理到本机 FastAPI；生产环境应改为实际可访问的后端 API 地址。
+
+## 15. Full Local Browser Demo
+
+完整浏览器演示需要四个进程/步骤：PostgreSQL、FastAPI、Demo Data 和 Vite 前端。推荐顺序：
+
+```powershell
+docker compose up -d postgres
+python -m alembic upgrade head
+python -m scripts.create_admin --username admin --display-name "Administrator"
+python -m uvicorn app.main:app
+```
+
+另一个终端启动前端：
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+浏览器打开 Vite 地址后，使用管理员登录，先调用或在后端 Smoke 流程中创建 `POST /api/v1/workspace/demo-data`，再按 `docs/DEMO.md` 的页面路径演示。从登录、商品工作台、SKU/库存一直到经营数据和复盘报告，数据库、权限、状态和指标计算是真实实现；默认 LLM、公开链接 Parser、图片 Generator 和视频 Generator 仍是 Mock。Phase 16H 的真实 PostgreSQL/浏览器验收结果以 `docs/POSTGRES_VALIDATION.md` 和本次验收报告为准。

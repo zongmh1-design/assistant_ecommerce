@@ -1,6 +1,6 @@
 # 完整单品业务演示
 
-前置条件：PostgreSQL 已迁移到 head、管理员已创建、FastAPI 已启动，默认 `LLM_PROVIDER=mock`。
+前置条件：PostgreSQL 已迁移到 head、管理员已创建、FastAPI 已启动，默认 `LLM_PROVIDER=mock`。如果演示前端，另外启动 `frontend` 的 Vite dev server，并将 `VITE_API_BASE_URL` 指向当前 FastAPI。
 
 可先调用 `POST /api/v1/workspace/demo-data` 创建或恢复整套 Demo 数据，再按返回的 ID 演示以下页面和接口。所有 Demo 平台、竞品、素材 URL 和经营数字均为 Mock。
 
@@ -89,3 +89,35 @@ python -m scripts.smoke_test_demo_flow --username admin
 ```
 
 输出 `PASS` 表示以上关键对象和状态均通过真实 HTTP API 验证。该脚本不直连数据库；是否使用 PostgreSQL 取决于正在运行的 FastAPI 配置。
+
+## 14 浏览器前端演示（Phase 16H）
+
+以下顺序适合 10～15 分钟现场演示。页面使用真实 HTTP API，默认 Provider 和媒体能力仍使用 Mock。
+
+1. **登录与工作台**
+   - 打开 `/login`，使用管理员登录；确认刷新后仍能恢复 `/auth/me`，退出后回到登录页。
+   - 进入 `/products`，打开 Demo 商品 `/products/{productId}`。
+2. **基础运营数据**
+   - 在工作台点击“SKU / 库存”，查看 SKU、当前库存和库存流水；用“调整库存”验证库存变化必须产生 Movement。
+   - 点击“竞品”，查看竞品列表；公开链接解析成功后仍需人工确认才会成为竞品。
+3. **诊断与创意**
+   - 点击“商品诊断”，生成或打开历史诊断并编辑保存。
+   - 点击“创意方案”，分别查看主图和视频脚本；生成 3 条草稿，人工选择一条 `selected`，再进入生成任务。
+4. **任务与素材**
+   - 在“生成任务”中创建并运行 image/video Job，查看事件时间线和 Mock 结果。
+   - 在“素材库”同步成功任务，使用 Mock 占位卡查看素材，并审核为 `approved`。
+5. **推广与投放计划**
+   - 在“推广链接”生成参数建议；确认 `target_url` 由人工填写，创建正式链接后用“测试跳转”打开 `/api/v1/r/{tracking_code}`。返回页面刷新，确认 click count 增加。
+   - 在“投放建议”生成并人工确认建议；在“投放实验”生成实验计划，依次人工推进 `draft → confirmed → running → finished`。这些状态不调用真实广告平台。
+6. **经营数据与复盘**
+   - 在“经营数据”手工录入或上传 CSV/XLSX：先预览，再确认导入；确认错误行和部分成功结果，下载模板文件可被 Excel/openpyxl 打开。
+   - 在“复盘报告”选择明确统计周期生成报告，查看指标证据和下一步动作，并编辑后刷新确认保存。
+
+### 角色验收
+
+- `admin/operator` 可以执行当前阶段允许的写操作；`viewer` 可以查看商品、诊断、创意、素材、经营数据和报告，但不显示生成、编辑、确认、导入等写按钮。
+- 前端隐藏按钮只是体验控制，后端 401/403 仍是最终安全边界。不存在的商品或跨商品资源应显示正常 404 业务提示，而不是原始 JSON。
+
+### Mock 边界
+
+真实的是浏览器、FastAPI、PostgreSQL、认证权限、事务、状态流转、文件导入、点击计数和经营指标。默认 LLM、竞品公开链接解析、图片 Generator、视频 Generator 仍是 Mock；没有真实电商平台、广告平台、对象存储或生产 Worker。
